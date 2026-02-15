@@ -11,10 +11,14 @@ const port = process.env.PORT || 3000;
 // ===== middleware =====
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"], // আপনার frontend port
+    origin: [
+      "http://localhost:5173",
+      "https://garment-grid-two.vercel.app",
+    ],
     credentials: true,
   })
 );
+
 
 app.use(express.json());
 
@@ -32,8 +36,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect to MongoDB
-    // await client.connect();
-    // console.log("✅ Connected to MongoDB");
+    await client.connect();
+    console.log("✅ Connected to MongoDB");
 
     const db = client.db("garment_grid_db");
     const productCollection = db.collection("products");
@@ -56,13 +60,15 @@ async function run() {
         }
 
         // Check if user already exists
-        const existingUser = await userCollection.findOne({ email: userData.email });
-        
+        const existingUser = await userCollection.findOne({
+          email: userData.email,
+        });
+
         if (existingUser) {
           // Update existing user
           await userCollection.updateOne(
             { email: userData.email },
-            { $set: { ...userData, updatedAt: new Date() } }
+            { $set: { ...userData, updatedAt: new Date() } },
           );
           return res.send({
             success: true,
@@ -130,7 +136,7 @@ async function run() {
 
         const result = await userCollection.updateOne(
           { email },
-          { $set: { ...updates, updatedAt: new Date() } }
+          { $set: { ...updates, updatedAt: new Date() } },
         );
 
         if (result.matchedCount === 0) {
@@ -161,20 +167,21 @@ async function run() {
         const { email } = req.params;
 
         const totalOrders = await bookingCollection.countDocuments({ email });
-        const completedOrders = await bookingCollection.countDocuments({ 
-          email, 
-          status: "delivered" 
+        const completedOrders = await bookingCollection.countDocuments({
+          email,
+          status: "delivered",
         });
-        const pendingOrders = await bookingCollection.countDocuments({ 
-          email, 
-          status: "pending" 
+        const pendingOrders = await bookingCollection.countDocuments({
+          email,
+          status: "pending",
         });
 
-        const orders = await bookingCollection
-          .find({ email })
-          .toArray();
-        
-        const totalSpent = orders.reduce((sum, order) => sum + (order.totalPrice || 0), 0);
+        const orders = await bookingCollection.find({ email }).toArray();
+
+        const totalSpent = orders.reduce(
+          (sum, order) => sum + (order.totalPrice || 0),
+          0,
+        );
 
         res.send({
           success: true,
@@ -333,16 +340,22 @@ async function run() {
 
         const result = await bookingCollection.insertOne({
           ...booking,
-          status: booking.paymentMethod === "Cash on Delivery" ? "confirmed" : "pending",
-          paymentStatus: booking.paymentMethod === "Cash on Delivery" ? "pending" : "paid",
+          status:
+            booking.paymentMethod === "Cash on Delivery"
+              ? "confirmed"
+              : "pending",
+          paymentStatus:
+            booking.paymentMethod === "Cash on Delivery" ? "pending" : "paid",
           createdAt: new Date(),
           updatedAt: new Date(),
-          tracking: [{
-            stage: "Order Placed",
-            location: "Online",
-            date: new Date(),
-            note: "Order has been placed successfully"
-          }]
+          tracking: [
+            {
+              stage: "Order Placed",
+              location: "Online",
+              date: new Date(),
+              note: "Order has been placed successfully",
+            },
+          ],
         });
 
         // Update product quantity
@@ -461,7 +474,8 @@ async function run() {
             productName: bookingData?.productName || "",
             quantity: bookingData?.quantity?.toString() || "0",
             customerEmail: bookingData?.email || "",
-            customerName: `${bookingData?.firstName || ""} ${bookingData?.lastName || ""}`.trim(),
+            customerName:
+              `${bookingData?.firstName || ""} ${bookingData?.lastName || ""}`.trim(),
           },
         });
 
@@ -485,7 +499,8 @@ async function run() {
       try {
         const { paymentIntentId, bookingId } = req.body;
 
-        const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+        const paymentIntent =
+          await stripe.paymentIntents.retrieve(paymentIntentId);
 
         if (paymentIntent.status === "succeeded") {
           await bookingCollection.updateOne(
@@ -501,9 +516,9 @@ async function run() {
                   stage: "Payment Confirmed",
                   location: "Online",
                   date: new Date(),
-                  note: "Payment has been confirmed"
-                }
-              }
+                  note: "Payment has been confirmed",
+                },
+              },
             },
           );
 
@@ -549,7 +564,7 @@ async function run() {
           "delivered",
           "cancelled",
         ];
-        
+
         if (!validStatuses.includes(status)) {
           return res.status(400).send({
             success: false,
@@ -671,7 +686,7 @@ async function run() {
             $set: {
               updatedAt: new Date(),
             },
-          }
+          },
         );
 
         if (result.matchedCount === 0) {
@@ -702,9 +717,8 @@ async function run() {
     });
 
     // ===== ping =====
-    // await client.db("admin").command({ ping: 1 });
-    // console.log("✅ MongoDB connection verified");
-    
+    await client.db("admin").command({ ping: 1 });
+    console.log("✅ MongoDB connection verified");
   } catch (error) {
     console.error("Failed to connect to MongoDB:", error);
   }
@@ -721,8 +735,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-// app.listen(port, () => {
-//   console.log(`🚀 Server running on port ${port}`);
-// });
+app.listen(port, () => {
+  console.log(`🚀 Server running on port ${port}`);
+});
 
 module.exports = app;
