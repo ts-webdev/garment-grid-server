@@ -36,8 +36,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect to MongoDB
-    await client.connect();
-    console.log("✅ Connected to MongoDB");
+    // await client.connect();
+    // console.log("✅ Connected to MongoDB");
 
     const db = client.db("garment_grid_db");
     const productCollection = db.collection("products");
@@ -717,8 +717,8 @@ async function run() {
     });
 
     // ===== ping =====
-    await client.db("admin").command({ ping: 1 });
-    console.log("✅ MongoDB connection verified");
+    // await client.db("admin").command({ ping: 1 });
+    // console.log("✅ MongoDB connection verified");
   } catch (error) {
     console.error("Failed to connect to MongoDB:", error);
   }
@@ -735,8 +735,8 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(port, () => {
-  console.log(`🚀 Server running on port ${port}`);
-});
+// app.listen(port, () => {
+//   console.log(`🚀 Server running on port ${port}`);
+// });
 
 module.exports = app;
